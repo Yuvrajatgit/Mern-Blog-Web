@@ -1,0 +1,21 @@
+.card {
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 10px;
+    max-height: 400px;
+}
+
+.posterImg {
+    width: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    
+}
+
+@media only screen and (min-width: 768px) {
+    .card{
+        max-width: 300px;
+        max-height: 225px;
+    }
+}

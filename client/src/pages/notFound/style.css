@@ -1,0 +1,25 @@
+.pageNotFound {
+    height: 700px;
+    padding-top: 200px;
+    display: flex;
+    text-align: center;
+    flex-direction: column;
+}
+
+.notfound {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+}
+
+
+
+.bigText {
+    font-size: 150px;
+    font-weight: 700;
+}
+
+.smallText {
+    font-size: 44px;
+}
+
