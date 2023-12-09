@@ -11,7 +11,7 @@ exports.signup = async (req, res, next) => {
         email: req.body.email,
         password: req.body.password
     });
-    const token = jwt.sign({id: newUser._id}, secret, {
+    const token = jwt.sign({id: newUser._id}, 'my-secret', {
         expiresIn: '90d'
     });
     res.header('Authorization', `Bearer ${token}`);
@@ -52,7 +52,7 @@ exports.login = async (req, res, next) => {
             throw new Error('Incorrect Email or password');
         }
 
-        const token = jwt.sign({id: user._id}, secret, {
+        const token = jwt.sign({id: user._id}, 'my-secret', {
             expiresIn: '90d'
         });
         res.header('Authorization', `Bearer ${token}`);
@@ -82,7 +82,7 @@ exports.protect = async (req,res,next)=>{
         throw new Error('You are not loggein in, Please log in to get access');
     }
 
-    const decoded = await promisify(jwt.verify)(token, secret);
+    const decoded = await promisify(jwt.verify)(token, 'my-secret');
     const user = await User.findById(decoded.id);
     if(!user){
       throw new Error('The user belonging to this token no longer exists.');
