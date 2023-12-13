@@ -64,7 +64,8 @@ const PostPage = () => {
             <div className="postImg">
               <img
                 className="img"
-                src={`${baseUrl}/${postData.post.cover}`}
+                src={postData.post.cover} 
+                alt={postData.post.title}
               />
             </div>
             <div className="author">

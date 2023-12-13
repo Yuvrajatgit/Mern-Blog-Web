@@ -69,7 +69,7 @@ const CreatePost = () => {
       content: "",
     },
     validationSchema: validationSchema,
-    onSubmit: async (values) => {
+    onSubmit: async (values, { setSubmitting }) => {
       console.log("Form data:", values);
       try {
         const cleanContent = stripHtmlTags(values.content);
@@ -82,6 +82,7 @@ const CreatePost = () => {
         if (values.file) {
           formData.append("file", values.file);
         }
+        setSubmitting(true); 
         const response = await fetch(`${baseUrl}/post`, {
           method: "POST",
           body: formData,
@@ -97,14 +98,15 @@ const CreatePost = () => {
       } catch (error) {
         console.log("ERROR posting data", error);
         window.alert("Unable to create post, try logging in again!");
+      } finally {
+        setSubmitting(false);
       }
     },
   });
 
   return (
-    // <div className="form">
     <ContentWrapper>
-      <form className="create" onSubmit={formik.handleSubmit}>
+      <form className="create" onSubmit={formik.handleSubmit} encType="multipart/form-data">
         <div className="postHeading">
           <h1>
             Create a <span className="headingSpan">New Post</span>
@@ -168,12 +170,11 @@ const CreatePost = () => {
           ) : null}
         </div>
 
-        <button type="submit" className="publish">
+        <button type="submit" className="publish" disabled={formik.isSubmitting}>
           Publish
         </button>
       </form>
     </ContentWrapper>
-    // </div>
   );
 };
 

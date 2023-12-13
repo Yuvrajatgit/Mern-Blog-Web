@@ -10,59 +10,57 @@ import { UserContext } from "../../components/context/UserContext";
 const baseUrl = process.env.REACT_APP_BASE_URL;
 
 function stripHtmlTags(html) {
-    // Create a temporary div element
-    const tempDiv = document.createElement('div');
-    
-    // Set the HTML content of the div
-    tempDiv.innerHTML = html;
-  
-    // Get the text content (strips HTML tags)
-    const plainText = tempDiv.textContent || tempDiv.innerText;
-  
-    // Clean up the temporary div
-    tempDiv.remove();
-  
-    return plainText;
-  }
+  // Create a temporary div element
+  const tempDiv = document.createElement("div");
+
+  // Set the HTML content of the div
+  tempDiv.innerHTML = html;
+
+  // Get the text content (strips HTML tags)
+  const plainText = tempDiv.textContent || tempDiv.innerText;
+
+  // Clean up the temporary div
+  tempDiv.remove();
+
+  return plainText;
+}
 
 const EditPost = () => {
   const { userInfo } = useContext(UserContext);
-  const {postId} = useParams();
+  const { postId } = useParams();
   const navigate = useNavigate();
   const [postToEdit, setPostToEdit] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(()=>{
-     const fetchPostData = async ()=>{
-      try{  
-      const response = await fetch(`${baseUrl}/post/${postId}`, {
-        method: 'GET'
-      });
-       if(!response.ok){
-        window.alert(`Error occured, please try to login again`);
-        throw new Error(`HTTP error! Status: ${response.status}`);
-       }
-       const data = await response.json();
-       setPostToEdit({
-        title: data.post.title,
-        summary: data.post.summary,
-        content: data.post.content,
-       })
-       setLoading(false); 
-    }catch(error){
+  useEffect(() => {
+    const fetchPostData = async () => {
+      try {
+        const response = await fetch(`${baseUrl}/post/${postId}`, {
+          method: "GET",
+        });
+        if (!response.ok) {
+          window.alert(`Error occured, please try to login again`);
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        setPostToEdit({
+          title: data.post.title,
+          summary: data.post.summary,
+          content: data.post.content,
+        });
+        setLoading(false);
+      } catch (error) {
         console.log("Error fetching post data", error.message);
         window.alert("Unable to find post");
         navigate(`/post/${postId}`);
-    }
-     };
-     fetchPostData();
-  },[postId]);
+      }
+    };
+    fetchPostData();
+  }, [postId]);
 
-  
   const validationSchema = Yup.object({
     title: Yup.string().required("Title is required"),
     summary: Yup.string().required("Summary is required"),
-    file: Yup.mixed().notRequired(),
     content: Yup.string().required("Content is required"),
   });
 
@@ -91,41 +89,49 @@ const EditPost = () => {
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
-        title: postToEdit?.title || "",
-        summary: postToEdit?.summary || "",
-        content: postToEdit?.content || "",
-        file: null,
+      title: postToEdit?.title || "",
+      summary: postToEdit?.summary || "",
+      content: postToEdit?.content || "",
     },
     validationSchema: validationSchema,
     onSubmit: async (values) => {
-       let response = null; 
       try {
+        // const formData = new FormData();
+        // formData.append("title", values.title);
+        // formData.append("summary", values.summary);
+        // formData.append("content", cleanContent);
+        // formData.append("author", userInfo._id);
+        // const token = localStorage.getItem('token');
+        // response = await fetch(`${baseUrl}/post/edit/${postId}`, {
+        //   method: "PUT",
+        //   headers: {
+        //     Authorization: `Bearer ${token}`,
+        //   },
+        //   body: formData,
+        // });
         const cleanContent = stripHtmlTags(values.content);
-        const formData = new FormData();
-        formData.append("title", values.title);
-        formData.append("summary", values.summary);
-        formData.append("content", cleanContent);
-        formData.append("author", userInfo._id);
+        const token = localStorage.getItem("token");
 
-        if (values.file !== null && values.file !== undefined) {
-            formData.append("file", values.file);
-          }
-        const token = localStorage.getItem('token');
-        response = await fetch(`${baseUrl}/post/edit/${postId}`, {
+        const response = await fetch(`${baseUrl}/post/edit/${postId}`, {
           method: "PUT",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: formData,
+          body: JSON.stringify({
+            title: values.title,
+            summary: values.summary,
+            content: cleanContent,
+            author: userInfo._id,
+          }),
         });
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+          throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
         if (data.status === "success") {
           window.alert(`${data.message}`);
           navigate(`/post/${postId}`);
-        
         } else {
           window.alert("Unable to edit the post !");
           navigate(`/post/${postId}`);
@@ -139,45 +145,47 @@ const EditPost = () => {
 
   return (
     <ContentWrapper>
-      {loading ? (  
+      {loading ? (
         <div className="loading">Loading...</div>
-      ) : (<form className="create" onSubmit={formik.handleSubmit}>
-        <div className="postHeading">
-          <h1>
-            Edit Post - <span className="headingSpan">{postToEdit?.title}</span>
-          </h1>
-        </div>
-        <div className="emailPassword">
-          <input
-            type="text"
-            id="title"
-            name="title"
-            placeholder="Title"
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            value={formik.values.title}
-          />
-          {formik.touched.title && formik.errors.title ? (
-            <div className="errorPost">{formik.errors.title}</div>
-          ) : null}
-        </div>
+      ) : (
+        <form className="create" onSubmit={formik.handleSubmit}>
+          <div className="postHeading">
+            <h1>
+              Edit Post -{" "}
+              <span className="headingSpan">{postToEdit?.title}</span>
+            </h1>
+          </div>
+          <div className="emailPassword">
+            <input
+              type="text"
+              id="title"
+              name="title"
+              placeholder="Title"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.title}
+            />
+            {formik.touched.title && formik.errors.title ? (
+              <div className="errorPost">{formik.errors.title}</div>
+            ) : null}
+          </div>
 
-        <div className="emailPassword">
-          <input
-            type="text"
-            id="summary"
-            name="summary"
-            placeholder="Summary"
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            value={formik.values.summary}
-          />
-          {formik.touched.summary && formik.errors.summary ? (
-            <div className="errorPost">{formik.errors.summary}</div>
-          ) : null}
-        </div>
+          <div className="emailPassword">
+            <input
+              type="text"
+              id="summary"
+              name="summary"
+              placeholder="Summary"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.summary}
+            />
+            {formik.touched.summary && formik.errors.summary ? (
+              <div className="errorPost">{formik.errors.summary}</div>
+            ) : null}
+          </div>
 
-        <div className="emailPassword">
+          {/* <div className="emailPassword">
           <input
             type="file"
             id="file"
@@ -189,26 +197,27 @@ const EditPost = () => {
           {formik.touched.file && formik.errors.file ? (
             <div className="errorPost">{formik.errors.file}</div>
           ) : null}
-        </div>
+        </div> */}
 
-        <div className="quillContainer quill">
-          <ReactQuill
-            id="content"
-            name="content"
-            value={formik.values.content}
-            onChange={(value) => formik.setFieldValue("content", value)}
-            modules={modules}
-            formats={formats}
-          />
-          {formik.touched.content && formik.errors.content ? (
-            <div className="errorPost">{formik.errors.content}</div>
-          ) : null}
-        </div>
+          <div className="quillContainer quill">
+            <ReactQuill
+              id="content"
+              name="content"
+              value={formik.values.content}
+              onChange={(value) => formik.setFieldValue("content", value)}
+              modules={modules}
+              formats={formats}
+            />
+            {formik.touched.content && formik.errors.content ? (
+              <div className="errorPost">{formik.errors.content}</div>
+            ) : null}
+          </div>
 
-        <button type="submit" className="publish">
-          Save Changes
-        </button>
-      </form>)}
+          <button type="submit" className="publish">
+            Save Changes
+          </button>
+        </form>
+      )}
     </ContentWrapper>
   );
 };

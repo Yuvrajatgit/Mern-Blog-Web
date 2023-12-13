@@ -1,33 +1,53 @@
-const fs = require('fs');
 const Post = require('./../models/postModel');
+const ImageKit = require('imagekit');
 
-exports.createPost = async (req,res,next) =>{
-    try{
+const imagekit = new ImageKit({
+  publicKey: 'public_d2SH/BS34bGAYFGTX+G9WPe5JVE=',
+  privateKey: 'private_j9gBAG4dDWWRotVrMm+TYsWny9s=',
+  urlEndpoint: 'https://ik.imagekit.io/yuvraj',
+});
+
+exports.createPost = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 'fail',
+        error: 'No file uploaded',
+      });
+    }
+
     const { title, summary, content, author } = req.body;
-    const {originalname, path} = req.file; 
-    const parts = originalname.split('.');
-    const ext = parts[parts.length - 1];
-    const newPath = path+'.'+ext;
 
-    fs.renameSync(path, newPath);
-
-    const newPost = await Post.create({
-        title, summary, content, cover: newPath, author
+    const result = await imagekit.upload({
+      file: req.file.buffer,
+      fileName: req.file.originalname,
+      folder: '/blogApp',
     });
 
-    res.status(201).json({
+      const newPost = await Post.create({
+        title,
+        summary,
+        content,
+        cover: result.url,
+        author,
+      });
+
+      res.status(201).json({
         status: 'success',
         message: 'Post created successfully',
-        newPost
-    });
+        newPost,
+      });
 
-    }catch(error){
-        res.status(404).json({
-            status: 'fail',
-            error: error.message
-            })
-    }
+  } catch (error) {
+    console.error('Error in createPost:', error);
+
+    res.status(500).json({
+      status: 'fail',
+      error: error.message,
+    });
+  }
 };
+
 
 exports.getAllPosts = async (req,res)=>{
    try{
@@ -66,20 +86,22 @@ exports.getPostById = async (req,res)=>{
     }
 };
 
+
 exports.editPost = async (req, res) => {
-  const { postId }= req.params;
+  const { postId } = req.params;
+
   try {
     const post = await Post.findById(postId);
-
     if (!post) {
       return res.status(404).json({
         status: 'fail',
         error: 'Post Not Found'
       });
     }
+
     const userId = req.user.id.toString();
 
-    if (!post?.author.equals(userId)) {
+    if (!post.author.equals(userId)) {
       return res.status(403).json({
         status: 'fail',
         error: 'Unauthorized'
@@ -90,23 +112,24 @@ exports.editPost = async (req, res) => {
     post.summary = req.body.summary || post.summary;
     post.content = req.body.content || post.content;
 
-    if (req.file) {
-      const { originalname, path } = req.file;
-      const parts = originalname.split('.');
-      const ext = parts[parts.length - 1];
-      const newPath = path + '.' + ext;
-
-      fs.renameSync(path, newPath);
-      post.cover = newPath;
-    }
-
     const updatedPost = await post.save();
+
 
     res.status(200).json({ status: 'success', message: 'Post updated successfully', post: updatedPost });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    console.error(error);
+
+    if (error.message.includes('Cast to ObjectId failed')) {
+      return res.status(404).json({
+        status: 'fail',
+        error: 'Post Not Found'
+      });
+    }
+
+    res.status(500).json({ status: 'error', message: 'Internal Server Error', error: error.message });
   }
 };
+
 
 exports.deletePost = async(req, res)=>{
   const {postId} = req.params;
@@ -126,6 +149,7 @@ exports.deletePost = async(req, res)=>{
         error: 'Unauthorized'
       });
     }
+
     await post.deleteOne();
     res.status(200).json({
       status: 'success',
