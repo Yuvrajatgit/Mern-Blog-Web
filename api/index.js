@@ -20,6 +20,8 @@ app.use(cors({
 
 app.use(express.json({limit:'25mb'}));
 app.use(express.urlencoded({limit: '25mb', extended: false}));
+
+router.get('/', postRouter);
 app.use('/auth', authRouter);
 app.use('/user', userRouter);
 app.use('/post', postRouter);
