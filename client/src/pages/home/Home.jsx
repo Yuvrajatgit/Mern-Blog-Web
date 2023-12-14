@@ -10,6 +10,9 @@ const Home = () => {
 
    const fetchData = async()=>{
     try{
+      
+    console.log(`${baseUrl}/post`);
+
     const response = await fetch(`${baseUrl}/post`, {
       method: 'GET',
     })
